@@ -1,8 +1,18 @@
+"use client";
+
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Download, Play } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Search, Filter, Download, Play, Check, X, Clock } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,155 +21,212 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { NewExecutionForm } from "@/components/payment/NewExecutionForm";
 
-const payments = [
-  { id: "IN-2024-001", fiatAmount: "€500,000", currency: "EUR", cryptoAmount: "499,500 USDT", fromBank: "Bank XYZ", reference: "TREAS-2024-04-001", initiator: "Gateway", time: "about 1 hour ago", status: "received" },
-  { id: "IN-2024-002", fiatAmount: "$250,000", currency: "USD", cryptoAmount: "250,000 USDT", fromBank: "Bank ABC", reference: "HEDGE-2024-012", initiator: "Gateway", time: "about 2 hours ago", status: "processing" },
-  { id: "IN-2024-003", fiatAmount: "€1,000,000", currency: "EUR", cryptoAmount: "999,000 USDT", fromBank: "Bank DEF", reference: "INST-PAY-001", initiator: "Gateway", time: "about 3 hours ago", status: "received" },
-  { id: "IN-2024-004", fiatAmount: "$750,000", currency: "USD", cryptoAmount: "750,000 USDT", fromBank: "Bank GHI", reference: "MAJOR-001", initiator: "Gateway", time: "about 4 hours ago", status: "received" },
-  { id: "IN-2024-005", fiatAmount: "€2,000,000", currency: "EUR", cryptoAmount: "1,998,000 USDT", fromBank: "Bank JKL", reference: "Q4-RES-001", initiator: "Gateway", time: "about 5 hours ago", status: "processing" },
+
+/* ---------------- MOCK DATA ---------------- */
+
+const initialPayments = [
+  { id: "IN-2024-001", amount: "500,000.00", status: "PENDING", requested_by: "Gateway" },
+  { id: "IN-2024-002", amount: "250,000.00", status: "APPROVED", requested_by: "Gateway" },
+  { id: "IN-2024-003", amount: "1,000,000.00", status: "REJECTED", requested_by: "Gateway" },
+  { id: "IN-2024-004", amount: "750,000.00", status: "PENDING", requested_by: "Gateway" },
+  { id: "IN-2024-005", amount: "2,000,000.00", status: "CANCELLED", requested_by: "Gateway" },
 ];
 
-const statusClasses: Record<string, string> = {
-  received: "status-badge status-received",
-  processing: "status-badge status-processing",
+const statusClasses = {
+  PENDING: "status-badge status-pending",
+  APPROVED: "status-badge status-approved",
+  REJECTED: "status-badge status-rejected",
+  CANCELLED: "status-badge status-cancelled",
 };
 
-const statusLabels: Record<string, string> = {
-  received: "Received",
-  processing: "Processing",
+const statusLabels = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  CANCELLED: "Cancelled",
 };
+
+const statusIcons = {
+  PENDING: <Clock className="w-3 h-3" />,
+  APPROVED: <Check className="w-3 h-3" />,
+  REJECTED: <X className="w-3 h-3" />,
+  CANCELLED: <X className="w-3 h-3" />,
+};
+
+/* ---------------- COMPONENT ---------------- */
 
 const IncomingPayments = () => {
+  const [payments, setPayments] = useState(initialPayments);
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<any>(null);
+  const [openCreate, setOpenCreate] = useState(false);
+
+
+  const openDetails = (payment: any) => {
+    setSelected(payment);
+    setOpen(true);
+  };
+
+  const updateStatus = (status: "APPROVED" | "REJECTED") => {
+    setPayments((prev) =>
+      prev.map((p) =>
+        p.id === selected.id ? { ...p, status } : p
+      )
+    );
+    setOpen(false);
+  };
+
   return (
     <DashboardLayout>
-      <Header 
-        title="Incoming Payments" 
-        subtitle="Process fiat-to-crypto conversions from bank gateways" 
+      <Header
+        title="Incoming Payments"
+        subtitle="Process fiat-to-crypto conversion requests"
       />
 
-      {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
-        <div className="relative flex-1 sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by ID, reference..."
-            className="pl-10"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
-            <Filter className="w-4 h-4" />
-            <span className="hidden sm:inline">Filters</span>
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row justify-between gap-3 mb-6">
+        <div className="flex gap-2 flex-1">
+          <div className="relative flex-1 sm:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input placeholder="Search by ID, remarks..." className="pl-10" />
+          </div>
+          <Button variant="outline" className="gap-2">
+            <Filter className="w-4 h-4" /> Filters
           </Button>
-          <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
-            <Download className="w-4 h-4" />
-            <span className="hidden sm:inline">Export</span>
+          <Button variant="outline" className="gap-2">
+            <Download className="w-4 h-4" /> Export
           </Button>
         </div>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => setOpenCreate(true)}
+        >
+          <Download className="w-4 h-4" />
+          Create Payment Request
+        </Button>
+
       </div>
 
-      {/* Mobile Cards View */}
+      {/* MOBILE VIEW */}
       <div className="block lg:hidden space-y-3">
-        {payments.map((payment) => (
-          <div key={payment.id} className="content-card p-4 space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-semibold">{payment.id}</p>
-                <p className="text-xs text-muted-foreground">{payment.reference}</p>
-              </div>
-              <span className={statusClasses[payment.status]}>
-                <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                {statusLabels[payment.status]}
-              </span>
+        {payments.map((p) => (
+          <div key={p.id} className="content-card p-4 space-y-3">
+            <span className={statusClasses[p.status]}>
+              {statusIcons[p.status]}
+              {statusLabels[p.status]}
+            </span>
+
+            <div className="text-sm">
+              <p className="text-muted-foreground text-xs">Requested By</p>
+              <p className="font-medium">{p.requested_by}</p>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <p className="text-muted-foreground text-xs">Fiat Amount</p>
-                <p className="font-medium">{payment.fiatAmount}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs">Converted</p>
-                <p className="font-medium text-accent">{payment.cryptoAmount}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs">From Bank</p>
-                <p className="font-medium">{payment.fromBank}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs">Created</p>
-                <p className="font-medium">{payment.time}</p>
-              </div>
-            </div>
-            <Button size="sm" className="w-full gap-1 bg-primary hover:bg-primary/90">
-              <Play className="w-3 h-3" />
-              Process
+
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={() => openDetails(p)}
+            >
+              View Details
             </Button>
           </div>
         ))}
       </div>
 
-      {/* Desktop Table */}
-      <div className="hidden lg:block content-card animate-fade-in">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID ↕</TableHead>
-                <TableHead>Fiat Amount</TableHead>
-                <TableHead>Converted</TableHead>
-                <TableHead>From Bank</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{payment.id}</p>
-                      <p className="text-xs text-muted-foreground">{payment.reference}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium">{payment.fiatAmount}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-accent font-medium">{payment.cryptoAmount}</span>
-                  </TableCell>
-                  <TableCell>{payment.fromBank}</TableCell>
-                  <TableCell className="text-muted-foreground">{payment.reference}</TableCell>
-                  <TableCell>
-                    <span className={statusClasses[payment.status]}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                      {statusLabels[payment.status]}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{payment.time}</TableCell>
-                  <TableCell>
-                    <Button size="sm" className="gap-1 bg-primary hover:bg-primary/90">
-                      <Play className="w-3 h-3" />
-                      Process
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+      {/* DESKTOP TABLE */}
+      <div className="hidden lg:block content-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Requested By</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Action</TableHead>
+            </TableRow>
+          </TableHeader>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between p-4 border-t border-border">
-          <p className="text-sm text-muted-foreground">Showing 1-5 of 5 payments</p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled>Previous</Button>
-            <Button variant="outline" size="sm" disabled>Next</Button>
-          </div>
-        </div>
+          <TableBody>
+            {payments.map((p) => (
+              <TableRow key={p.id}>
+                <TableCell>{p.id}</TableCell>
+                <TableCell>{p.amount}</TableCell>
+                <TableCell>{p.requested_by}</TableCell>
+                <TableCell>
+                  <span className={statusClasses[p.status]}>
+                    {statusIcons[p.status]}
+                    {statusLabels[p.status]}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDetails(p)}
+                  >
+                    Action
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
+
+
+      <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+        <DialogContent className="max-w-3xl max-h-[90vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Create Payment Request</DialogTitle>
+          </DialogHeader>
+
+          <NewExecutionForm onSuccess={() => setOpenCreate(false)} />
+        </DialogContent>
+      </Dialog>
+
+
+      {/* DETAILS MODAL */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Payment Details</DialogTitle>
+          </DialogHeader>
+
+          {selected && (
+            <div className="space-y-3 text-sm">
+              <div><b>ID:</b> {selected.id}</div>
+              <div><b>Amount:</b> {selected.amount}</div>
+              <div><b>Requested By:</b> {selected.requested_by}</div>
+              <div className="flex items-center gap-2">
+                <b>Status:</b>
+                <span className={statusClasses[selected.status]}>
+                  {statusLabels[selected.status]}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {selected?.status === "PENDING" && (
+            <DialogFooter className="gap-2">
+              <Button
+                className="bg-green-500 hover:bg-green-600"
+                onClick={() => updateStatus("APPROVED")}
+              >
+                <Check className="w-4 h-4 mr-1" /> Accept
+              </Button>
+              <Button
+                className="bg-red-500 hover:bg-red-600"
+                onClick={() => updateStatus("REJECTED")}
+              >
+                <X className="w-4 h-4 mr-1" /> Reject
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

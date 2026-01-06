@@ -13,6 +13,7 @@ import Tickets from "./pages/Tickets";
 import AuditLogs from "./pages/AuditLogs";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute"
 
 const queryClient = new QueryClient();
 
@@ -24,14 +25,16 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Index />} />
-          <Route path="/incoming" element={<IncomingPayments />} />
-          <Route path="/settlements" element={<SettlementQueue />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/fee-wallet" element={<FeeWallet />} />
-          <Route path="/tickets" element={<Tickets />} />
-          <Route path="/audit" element={<AuditLogs />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/incoming" element={<IncomingPayments />} />
+            <Route path="/settlements" element={<SettlementQueue />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/fee-wallet" element={<FeeWallet />} />
+            <Route path="/tickets" element={<Tickets />} />
+            <Route path="/audit" element={<AuditLogs />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -6,6 +6,7 @@ interface HeaderProps {
   subtitle: string;
 }
 
+
 export function Header({ title, subtitle }: HeaderProps) {
   return (
     <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 lg:mb-8">

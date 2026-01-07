@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
 import { transactionApi } from "@/api/useApi";
-import { useGetRequests } from "@/api/queries";
+import { useGetRequests, useGetTransactions } from "@/api/queries";
 
 const transactions = [
   {
@@ -90,6 +90,10 @@ const statusLabels: Record<string, string> = {
 };
 
 const Transactions = () => {
+  const { data: transactionList, isPending: transactionListPending } =
+    useGetTransactions();
+  console.log(transactionList, "transactionList>>>");
+
   return (
     <DashboardLayout>
       <Header

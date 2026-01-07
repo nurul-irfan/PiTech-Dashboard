@@ -13,32 +13,42 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  DollarSign,
-  AlertCircle,
-  Info,
-} from "lucide-react";
+import { ArrowRight, DollarSign, AlertCircle, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { paymentApi } from "@/api/useApi";
+import { toast } from "sonner";
 
 const CORE_WALLET = "0x742d35Cc6634C0532925a3b844Bc9e7595f7BBBB";
 
 type Props = {
-  onSuccess: (data: {
-    fiatAmount: string;
-  }) => void;
+  onSuccess: (data: { fiatAmount: string }) => void;
 };
 
 export const NewExecutionForm = ({ onSuccess }: Props) => {
-  const { toast } = useToast();
-
+  const { raiseRequests } = paymentApi;
   const [formData, setFormData] = useState({
     fiatAmount: "",
-    fiatCurrency: "EUR",
-    binanceAccountRef: "",
+    fiatCurrency: "USD",
     notes: "",
   });
+  const { mutateAsync, isPending } = useMutation<any>({
+    mutationFn: () => {
+      return raiseRequests({
+        amount: formData?.fiatAmount,
+        remarks: formData?.notes,
+      });
+    },
+    onSuccess: (data) => {
+      if (data?.data?.success) {
+        toast.success("Execution Request Created");
 
+        onSuccess({ fiatAmount: formData.fiatAmount });
+      } else {
+        toast.error("Unable to create request");
+      }
+    },
+  });
   const estimatedUsdt = useMemo(() => {
     const amount = Number(formData.fiatAmount);
     if (!amount || amount <= 0) return 0;
@@ -48,21 +58,11 @@ export const NewExecutionForm = ({ onSuccess }: Props) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.fiatAmount || !formData.binanceAccountRef) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill all required fields",
-        variant: "destructive",
-      });
+    if (!formData.fiatAmount) {
+      toast("Validation Error");
       return;
     }
-
-    toast({
-      title: "Execution Request Created",
-      description: "Submitted for approval",
-    });
-
-    onSuccess({ fiatAmount: formData.fiatAmount });
+    mutateAsync();
   };
 
   return (
@@ -122,10 +122,10 @@ export const NewExecutionForm = ({ onSuccess }: Props) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="EUR">EUR</SelectItem>
+                    {/* <SelectItem value="EUR">EUR</SelectItem> */}
                     <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="AED">AED</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
+                    {/* <SelectItem value="AED">AED</SelectItem>
+                    <SelectItem value="GBP">GBP</SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>
@@ -182,8 +182,9 @@ export const NewExecutionForm = ({ onSuccess }: Props) => {
             type="submit"
             size="lg"
             className="w-full sm:w-auto sm:ml-auto bg-yellow-500 hover:bg-yellow-600 text-black flex items-center justify-center"
+            disabled={isPending}
           >
-            Submit for Approval
+            {isPending ? "Submitting..." : ` Submit for Approval`}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>

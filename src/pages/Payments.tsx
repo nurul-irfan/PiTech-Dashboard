@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -22,16 +22,44 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { NewExecutionForm } from "@/components/payment/NewExecutionForm";
-
+import { paymentApi } from "@/api/useApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useGetRequests } from "@/api/queries";
+import { toast } from "sonner";
 
 /* ---------------- MOCK DATA ---------------- */
 
 const initialPayments = [
-  { id: "IN-2024-001", amount: "500,000.00", status: "PENDING", requested_by: "Gateway" },
-  { id: "IN-2024-002", amount: "250,000.00", status: "APPROVED", requested_by: "Gateway" },
-  { id: "IN-2024-003", amount: "1,000,000.00", status: "REJECTED", requested_by: "Gateway" },
-  { id: "IN-2024-004", amount: "750,000.00", status: "PENDING", requested_by: "Gateway" },
-  { id: "IN-2024-005", amount: "2,000,000.00", status: "CANCELLED", requested_by: "Gateway" },
+  {
+    id: "IN-2024-001",
+    amount: "500,000.00",
+    status: "PENDING",
+    requested_by: "Gateway",
+  },
+  {
+    id: "IN-2024-002",
+    amount: "250,000.00",
+    status: "APPROVED",
+    requested_by: "Gateway",
+  },
+  {
+    id: "IN-2024-003",
+    amount: "1,000,000.00",
+    status: "REJECTED",
+    requested_by: "Gateway",
+  },
+  {
+    id: "IN-2024-004",
+    amount: "750,000.00",
+    status: "PENDING",
+    requested_by: "Gateway",
+  },
+  {
+    id: "IN-2024-005",
+    amount: "2,000,000.00",
+    status: "CANCELLED",
+    requested_by: "Gateway",
+  },
 ];
 
 const statusClasses = {
@@ -62,7 +90,34 @@ const Payments = () => {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [openCreate, setOpenCreate] = useState(false);
-
+  const [rejectionMessage, setRejectionMessage] = useState("");
+  const [rejectionModalState, setRejectionModalState] = useState(false);
+  const [filter, setFilter] = useState("");
+  const { approveRequest, rejectRequest } = paymentApi;
+  const {
+    data: requestList = [],
+    isLoading: requestListLoading,
+    refetch: requestListRefetch,
+  } = useGetRequests();
+  const { mutateAsync: updateStatusMutate, isPending: updateStatusPending } =
+    useMutation({
+      mutationFn: ({ status }: { status: any }) => {
+        if (status == "APPROVED") {
+          return approveRequest(selected?.id);
+        }
+        return rejectRequest(selected?.id, rejectionMessage);
+      },
+      onSuccess: (data) => {
+        requestListRefetch();
+        toast.success("Request processed sucessfully");
+        setRejectionMessage("");
+        requestListRefetch();
+      },
+      onError: (errr: any) => {
+        toast.error(errr?.data?.message || "Unable to process request.");
+        setRejectionMessage("");
+      },
+    });
 
   const openDetails = (payment: any) => {
     setSelected(payment);
@@ -70,13 +125,20 @@ const Payments = () => {
   };
 
   const updateStatus = (status: "APPROVED" | "REJECTED") => {
-    setPayments((prev) =>
-      prev.map((p) =>
-        p.id === selected.id ? { ...p, status } : p
-      )
-    );
+    if (status == "REJECTED") {
+      setOpen(false);
+      setRejectionModalState(true);
+      return;
+    }
+    updateStatusMutate({ status });
     setOpen(false);
   };
+
+  const filteredRequestList = useMemo(() => {
+    return requestList?.filter((i: any) =>
+      String(i?.id)?.toLowerCase()?.includes(filter?.toLowerCase())
+    );
+  }, [requestList, filter]);
 
   return (
     <DashboardLayout>
@@ -90,14 +152,19 @@ const Payments = () => {
         <div className="flex gap-2 flex-1">
           <div className="relative flex-1 sm:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search by ID, remarks..." className="pl-10" />
+            <Input
+              placeholder="Search by ID"
+              className="pl-10"
+              value={filter}
+              onChange={(e) => setFilter(e?.target?.value)}
+            />
           </div>
-          <Button variant="outline" className="gap-2">
+          {/* <Button variant="outline" className="gap-2">
             <Filter className="w-4 h-4" /> Filters
-          </Button>
-          <Button variant="outline" className="gap-2">
+          </Button> */}
+          {/* <Button variant="outline" className="gap-2">
             <Download className="w-4 h-4" /> Export
-          </Button>
+          </Button> */}
         </div>
         <Button
           variant="outline"
@@ -107,12 +174,11 @@ const Payments = () => {
           <Download className="w-4 h-4" />
           Create Payment Request
         </Button>
-
       </div>
 
       {/* MOBILE VIEW */}
       <div className="block lg:hidden space-y-3">
-        {payments.map((p) => (
+        {filteredRequestList?.map((p) => (
           <div key={p.id} className="content-card p-4 space-y-3">
             <span className={statusClasses[p.status]}>
               {statusIcons[p.status]}
@@ -150,7 +216,7 @@ const Payments = () => {
           </TableHeader>
 
           <TableBody>
-            {payments.map((p) => (
+            {filteredRequestList?.map((p) => (
               <TableRow key={p.id}>
                 <TableCell>{p.id}</TableCell>
                 <TableCell>{p.amount}</TableCell>
@@ -176,20 +242,28 @@ const Payments = () => {
         </Table>
       </div>
 
-
       <Dialog open={openCreate} onOpenChange={setOpenCreate}>
         <DialogContent className="max-w-3xl max-h-[90vh] p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6">
             <DialogTitle>Create Payment Request</DialogTitle>
           </DialogHeader>
 
-          <NewExecutionForm onSuccess={() => setOpenCreate(false)} />
+          <NewExecutionForm
+            onSuccess={() => {
+              requestListRefetch();
+              setOpenCreate(false);
+            }}
+          />
         </DialogContent>
       </Dialog>
 
-
       {/* DETAILS MODAL */}
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(val) => {
+          setOpen(val);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Payment Details</DialogTitle>
@@ -197,9 +271,20 @@ const Payments = () => {
 
           {selected && (
             <div className="space-y-3 text-sm">
-              <div><b>ID:</b> {selected.id}</div>
-              <div><b>Amount:</b> {selected.amount}</div>
-              <div><b>Requested By:</b> {selected.requested_by}</div>
+              <div>
+                <b>ID:</b> {selected.id}
+              </div>
+              <div>
+                <b>Amount:</b> {selected.amount}
+              </div>
+              {selected.remarks && (
+                <div>
+                  <b>Remark:</b> {selected.remarks}
+                </div>
+              )}
+              <div>
+                <b>Requested By:</b> {selected.requested_by}
+              </div>
               <div className="flex items-center gap-2">
                 <b>Status:</b>
                 <span className={statusClasses[selected.status]}>
@@ -214,17 +299,57 @@ const Payments = () => {
               <Button
                 className="bg-green-500 hover:bg-green-600"
                 onClick={() => updateStatus("APPROVED")}
+                disabled={updateStatusPending}
               >
                 <Check className="w-4 h-4 mr-1" /> Accept
               </Button>
               <Button
                 className="bg-red-500 hover:bg-red-600"
                 onClick={() => updateStatus("REJECTED")}
+                disabled={updateStatusPending}
               >
                 <X className="w-4 h-4 mr-1" /> Reject
               </Button>
             </DialogFooter>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={rejectionModalState}
+        onOpenChange={(val) => {
+          if (!val) {
+            setRejectionMessage("");
+          }
+          setRejectionModalState(val);
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Rejection Details</DialogTitle>
+          </DialogHeader>
+          <textarea
+            rows={5}
+            cols={30}
+            className=" border-gray-500 p-2"
+            placeholder="Enter rejection reason"
+            value={rejectionMessage}
+            onChange={(e) => {
+              setRejectionMessage(e?.target?.value);
+            }}
+          />
+
+          <DialogFooter className="gap-2">
+            <Button
+              className="bg-red-500 hover:bg-red-600"
+              onClick={() => {
+                updateStatusMutate({ status: "REJECTED" });
+                setRejectionModalState(false);
+              }}
+              disabled={updateStatusPending}
+            >
+              <X className="w-4 h-4 mr-1" /> Reject
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </DashboardLayout>

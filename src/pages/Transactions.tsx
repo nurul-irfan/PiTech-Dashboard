@@ -11,13 +11,66 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { transactionApi } from "@/api/useApi";
+import { useGetRequests } from "@/api/queries";
 
 const transactions = [
-  { id: "IN-2024-001", reference: "TREAS-2024-04-001", amountReceived: "500,000 USDT", feeDeducted: "50,000 USDT", amountSent: "450,000 USDT", asset: "USDT", fromBank: "Bank XYZ", status: "pending", time: "about 1 hour ago" },
-  { id: "IN-2024-002", reference: "HEDGE-2024-012", amountReceived: "250,000 USDT", feeDeducted: "25,000 USDT", amountSent: "225,000 USDT", asset: "USDT", fromBank: "Bank ABC", status: "processed", time: "about 2 hours ago" },
-  { id: "IN-2024-003", reference: "INST-PAY-001", amountReceived: "1,000,000 USDT", feeDeducted: "100,000 USDT", amountSent: "900,000 USDT", asset: "USDT", fromBank: "Bank DEF", status: "sent", time: "about 3 hours ago" },
-  { id: "IN-2024-004", reference: "MAJOR-001", amountReceived: "750,000 USDT", feeDeducted: "75,000 USDT", amountSent: "675,000 USDT", asset: "USDT", fromBank: "Bank GHI", status: "settled", time: "about 4 hours ago" },
-  { id: "IN-2024-005", reference: "Q4-RES-001", amountReceived: "2,000,000 USDT", feeDeducted: "200,000 USDT", amountSent: "1,800,000 USDT", asset: "USDT", fromBank: "Bank JKL", status: "settled", time: "about 5 hours ago" },
+  {
+    id: "IN-2024-001",
+    reference: "TREAS-2024-04-001",
+    amountReceived: "500,000 USDT",
+    feeDeducted: "50,000 USDT",
+    amountSent: "450,000 USDT",
+    asset: "USDT",
+    fromBank: "Bank XYZ",
+    status: "pending",
+    time: "about 1 hour ago",
+  },
+  {
+    id: "IN-2024-002",
+    reference: "HEDGE-2024-012",
+    amountReceived: "250,000 USDT",
+    feeDeducted: "25,000 USDT",
+    amountSent: "225,000 USDT",
+    asset: "USDT",
+    fromBank: "Bank ABC",
+    status: "processed",
+    time: "about 2 hours ago",
+  },
+  {
+    id: "IN-2024-003",
+    reference: "INST-PAY-001",
+    amountReceived: "1,000,000 USDT",
+    feeDeducted: "100,000 USDT",
+    amountSent: "900,000 USDT",
+    asset: "USDT",
+    fromBank: "Bank DEF",
+    status: "sent",
+    time: "about 3 hours ago",
+  },
+  {
+    id: "IN-2024-004",
+    reference: "MAJOR-001",
+    amountReceived: "750,000 USDT",
+    feeDeducted: "75,000 USDT",
+    amountSent: "675,000 USDT",
+    asset: "USDT",
+    fromBank: "Bank GHI",
+    status: "settled",
+    time: "about 4 hours ago",
+  },
+  {
+    id: "IN-2024-005",
+    reference: "Q4-RES-001",
+    amountReceived: "2,000,000 USDT",
+    feeDeducted: "200,000 USDT",
+    amountSent: "1,800,000 USDT",
+    asset: "USDT",
+    fromBank: "Bank JKL",
+    status: "settled",
+    time: "about 5 hours ago",
+  },
 ];
 
 const statusClasses: Record<string, string> = {
@@ -39,19 +92,16 @@ const statusLabels: Record<string, string> = {
 const Transactions = () => {
   return (
     <DashboardLayout>
-      <Header 
-        title="Transactions" 
-        subtitle="Complete settlement history and timeline" 
+      <Header
+        title="Transactions"
+        subtitle="Complete settlement history and timeline"
       />
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
         <div className="relative flex-1 sm:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by ID, reference..."
-            className="pl-10"
-          />
+          <Input placeholder="Search by ID, reference..." className="pl-10" />
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
@@ -102,7 +152,11 @@ const Transactions = () => {
                 <Clock className="w-3 h-3" />
                 <span>{tx.time}</span>
               </div>
-              <Button variant="ghost" size="sm" className="text-accent h-auto py-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-accent h-auto py-1"
+              >
                 Details
               </Button>
             </div>
@@ -133,12 +187,20 @@ const Transactions = () => {
                   <TableCell>
                     <div>
                       <p className="font-medium">{tx.id}</p>
-                      <p className="text-xs text-muted-foreground">{tx.reference}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {tx.reference}
+                      </p>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{tx.amountReceived}</TableCell>
-                  <TableCell className="text-primary font-medium">{tx.feeDeducted}</TableCell>
-                  <TableCell className="text-success font-medium">{tx.amountSent}</TableCell>
+                  <TableCell className="font-medium">
+                    {tx.amountReceived}
+                  </TableCell>
+                  <TableCell className="text-primary font-medium">
+                    {tx.feeDeducted}
+                  </TableCell>
+                  <TableCell className="text-success font-medium">
+                    {tx.amountSent}
+                  </TableCell>
                   <TableCell>
                     <span className="text-accent font-medium">{tx.asset}</span>
                   </TableCell>
@@ -168,10 +230,16 @@ const Transactions = () => {
 
         {/* Pagination */}
         <div className="flex items-center justify-between p-4 border-t border-border">
-          <p className="text-sm text-muted-foreground">Showing 1-5 of 5 transactions</p>
+          <p className="text-sm text-muted-foreground">
+            Showing 1-5 of 5 transactions
+          </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled>Previous</Button>
-            <Button variant="outline" size="sm" disabled>Next</Button>
+            <Button variant="outline" size="sm" disabled>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" disabled>
+              Next
+            </Button>
           </div>
         </div>
       </div>

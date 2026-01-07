@@ -4,7 +4,10 @@ import { Menu } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: ReactNode;
+  title?: string;
+  subtitle?: string;
 }
+
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

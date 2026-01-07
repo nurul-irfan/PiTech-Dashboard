@@ -57,7 +57,7 @@ const statusIcons = {
 
 /* ---------------- COMPONENT ---------------- */
 
-const IncomingPayments = () => {
+const Payments = () => {
   const [payments, setPayments] = useState(initialPayments);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<any>(null);
@@ -231,4 +231,4 @@ const IncomingPayments = () => {
   );
 };
 
-export default IncomingPayments;
+export default Payments;

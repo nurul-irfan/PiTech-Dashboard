@@ -16,12 +16,15 @@ import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: ArrowDownToLine, label: "Incoming Payments", path: "/incoming" },
-  { icon: ListChecks, label: "Settlement Queue", path: "/settlements", badge: 3 },
+  { icon: LayoutDashboard, label: "Admin", path: "/admins" },
+  { icon: LayoutDashboard, label: "Payment Request", path: "/payments" },
   { icon: Clock, label: "Transactions", path: "/transactions" },
-  { icon: Wallet, label: "Fee Wallet", path: "/fee-wallet" },
+  { icon: ListChecks, label: "Crypto Settlement", path: "/settlements", badge: 3 },
+  { icon: FileText, label: "Payment Audit", path: "/audit" },
+  { icon: LayoutDashboard, label: "User", path: "/users" },
+  { icon: FileText, label: "System Logs", path: "/system-logs" },
+  { icon: MessageSquare, label: "Support", path: "/supports", badge: 2 },
   { icon: MessageSquare, label: "Tickets", path: "/tickets", badge: 2 },
-  { icon: FileText, label: "Audit Logs", path: "/audit" },
 ];
 
 interface SidebarProps {
@@ -46,12 +49,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     <>
       {/* Mobile Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onClose}
         />
       )}
-      
+
       {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
@@ -70,7 +73,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <p className="text-sidebar-foreground/60 text-xs">Payment Processing</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground p-1"
           >
@@ -128,7 +131,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <p className="text-sidebar-foreground font-medium text-sm truncate">PI Tech Admin</p>
               <p className="text-sidebar-foreground/60 text-xs">ADMIN</p>
             </div>
-            <button 
+            <button
               onClick={handleLogout}
               className="text-sidebar-foreground/60 hover:text-sidebar-foreground transition-colors flex-shrink-0"
             >

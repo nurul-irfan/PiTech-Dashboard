@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, ArrowRight, Info, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useApi } from "@/api/useApi";
+import {
+  setAuthToken,
+  adminApi,
+} from "@/api/useApi";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,7 +17,7 @@ const Login = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { adminLogin, forgotPassword } = useApi();
+
 
   /* =========================
      LOGIN
@@ -24,10 +27,11 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const result = await adminLogin(email, password);
+      const result = await adminApi.login({ email, password });
 
       /* Store auth data */
-      localStorage.setItem("token", result.token);
+      setAuthToken(result.data.token)
+      localStorage.setItem("token", result.data.token);
       // localStorage.setItem("roles", JSON.stringify(result.admin.roles));
       // localStorage.setItem("user", JSON.stringify(result.admin));
 
@@ -58,7 +62,7 @@ const Login = () => {
     }
 
     try {
-      await forgotPassword(email);
+      await adminApi.resetPassword(email);
       toast({
         title: "Reset link sent",
         description: "Check your email for password reset instructions",
